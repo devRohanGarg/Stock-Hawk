@@ -1,11 +1,10 @@
 package com.sam_chordas.android.stockhawk.ui;
 
-import android.app.LoaderManager;
 import android.content.Context;
-import android.content.CursorLoader;
 import android.content.Intent;
-import android.content.Loader;
 import android.database.Cursor;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -15,8 +14,10 @@ import com.sam_chordas.android.stockhawk.R;
 import com.sam_chordas.android.stockhawk.data.QuoteColumns;
 import com.sam_chordas.android.stockhawk.data.QuoteProvider;
 import com.sam_chordas.android.stockhawk.rest.Utils;
+import com.sam_chordas.android.stockhawk.service.StockIntentService;
 
 import java.util.List;
+import java.util.Map;
 
 import yahoofinance.Stock;
 import yahoofinance.histquotes.HistoricalQuote;
@@ -24,42 +25,18 @@ import yahoofinance.histquotes.HistoricalQuote;
 /**
  * Created by Rohan Garg on 23-04-2016.
  */
-public class LineGraphActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
+public class LineGraphActivity extends AppCompatActivity {
 
-    private static final int CURSOR_LOADER_ID = 0;
-    Stock stock;
-    int position;
-    private Context mContext;
+    Map<String, Stock> stocks;
+    String data;
+    boolean isConnected;
+    ConnectivityManager cm;
+    private int position;
     private String symbol;
+    private Intent mServiceIntent;
     private String TAG = LineGraphActivity.class.getSimpleName();
-    private Cursor mCursor;
 
-    @Override
-    public void onResume() {
-        super.onResume();
-        getLoaderManager().restartLoader(CURSOR_LOADER_ID, null, this);
-    }
-
-    @Override
-    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        // This narrows the return to only the stocks that are most current.
-        return new CursorLoader(this, QuoteProvider.Quotes.CONTENT_URI,
-                new String[]{QuoteColumns._ID, QuoteColumns.SYMBOL, QuoteColumns.NAME, QuoteColumns.HISTORICAL_DATA, QuoteColumns.CURRENCY,
-                        QuoteColumns.PERCENT_CHANGE, QuoteColumns.CHANGE, QuoteColumns.BIDPRICE, QuoteColumns.ISUP},
-                QuoteColumns.ISCURRENT + " = ?",
-                new String[]{"1"},
-                null);
-    }
-
-    @Override
-    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-        mCursor = data;
-    }
-
-    @Override
-    public void onLoaderReset(Loader<Cursor> loader) {
-    }
-
+    @SuppressWarnings("unchecked")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -67,21 +44,31 @@ public class LineGraphActivity extends AppCompatActivity implements LoaderManage
         Intent i = getIntent();
         symbol = i.getStringExtra("symbol").toUpperCase();
         position = i.getIntExtra("position", 0);
-        Log.d(TAG, String.valueOf(position));
         setActionBarTitle(symbol);
 
-        getLoaderManager().initLoader(CURSOR_LOADER_ID, null, this);
+        cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        isConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+        mServiceIntent = new Intent(this, StockIntentService.class);
 
-        //        mCursor.moveToPosition(position);
-//        Cursor c = getContentResolver().query(QuoteProvider.Quotes.CONTENT_URI,
-//                new String[]{QuoteColumns.SYMBOL}, QuoteColumns.SYMBOL + "= ?",
-//                new String[]{symbol}, null);
-        List<HistoricalQuote> historicalQuotes = null;
-        if (mCursor != null) {
-            mCursor.moveToPosition(position);
-            historicalQuotes = Utils.JSONToHistoricalQuote(mCursor.getString(mCursor.getColumnIndex(QuoteColumns.HISTORICAL_DATA)));
-            mCursor.close();
+        if (isConnected) {
+            mServiceIntent.putExtra("tag", "graph");
+            mServiceIntent.putExtra("symbol", symbol);
+            startService(mServiceIntent);
         }
+
+        Cursor c = getContentResolver().query(QuoteProvider.Quotes.CONTENT_URI,
+                new String[]{QuoteColumns.SYMBOL, QuoteColumns.HISTORICAL_DATA}, null,
+                null, null);
+
+        List<HistoricalQuote> historicalQuotes = null;
+
+        if (c != null) {
+            c.moveToPosition(position);
+            historicalQuotes = Utils.JSONToHistoricalQuote(c.getString(c.getColumnIndex(QuoteColumns.HISTORICAL_DATA)));
+            c.close();
+        }
+
 
         if (historicalQuotes != null) {
             for (HistoricalQuote quote : historicalQuotes) {

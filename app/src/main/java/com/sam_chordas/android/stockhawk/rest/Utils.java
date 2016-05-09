@@ -23,10 +23,10 @@ public class Utils {
     public static boolean showPercent = true;
     private static String LOG_TAG = Utils.class.getSimpleName();
 
-    public static ArrayList stocksToContentVals(Map<String, Stock> stocks) {
+    public static ArrayList stocksToContentVals(Map<String, Stock> stocks, boolean history) {
         ArrayList<ContentProviderOperation> batchOperations = new ArrayList<>();
         for (Map.Entry<String, Stock> entry : stocks.entrySet()) {
-            batchOperations.add(buildBatchOperation(entry.getValue()));
+            batchOperations.add(buildBatchOperation(entry.getValue(), history));
         }
         return batchOperations;
     }
@@ -40,7 +40,7 @@ public class Utils {
         }.getType());
     }
 
-    public static ContentProviderOperation buildBatchOperation(Stock stock) {
+    public static ContentProviderOperation buildBatchOperation(Stock stock, boolean history) {
         ContentProviderOperation.Builder builder = ContentProviderOperation.newInsert(
                 QuoteProvider.Quotes.CONTENT_URI);
         try {
@@ -48,10 +48,12 @@ public class Utils {
             String percentage_change = String.valueOf(stock.getQuote().getChangeInPercent()) + "%";
             builder.withValue(QuoteColumns.SYMBOL, stock.getQuote().getSymbol());
             builder.withValue(QuoteColumns.NAME, stock.getName());
-            builder.withValue(QuoteColumns.HISTORICAL_DATA, HistoricalQuoteToJSON(stock.getHistory()));
             builder.withValue(QuoteColumns.CURRENCY, stock.getCurrency());
             builder.withValue(QuoteColumns.BIDPRICE, String.valueOf(stock.getQuote().getBid()));
             builder.withValue(QuoteColumns.ISCURRENT, 1);
+
+            if (history)
+                builder.withValue(QuoteColumns.HISTORICAL_DATA, HistoricalQuoteToJSON(stock.getHistory()));
 
             if (percentage_change.charAt(0) == '-') {
                 builder.withValue(QuoteColumns.PERCENT_CHANGE, percentage_change);

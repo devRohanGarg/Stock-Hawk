@@ -37,6 +37,7 @@ public class StockTaskService extends GcmTaskService {
 
     private Context mContext;
     private boolean isUpdate;
+    private boolean history;
 
     public StockTaskService() {
     }
@@ -63,7 +64,7 @@ public class StockTaskService extends GcmTaskService {
                 // Init task. Populates DB with quotes for the symbols seen below
                 try {
                     String[] symbols = new String[]{"INTC", "BABA", "TSLA", "AIR.PA", "YHOO"};
-                    stocks = YahooFinance.get(symbols, true);
+                    stocks = YahooFinance.get(symbols);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -77,7 +78,7 @@ public class StockTaskService extends GcmTaskService {
                 }
                 try {
                     String[] symbols = symbolList.toArray(new String[symbolList.size()]);
-                    stocks = YahooFinance.get(symbols, true);
+                    stocks = YahooFinance.get(symbols);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -90,7 +91,7 @@ public class StockTaskService extends GcmTaskService {
             String stockInput = params.getExtras().getString("symbol");
             try {
                 String[] symbols = {stockInput};
-                stocks = YahooFinance.get(symbols, true);
+                stocks = YahooFinance.get(symbols);
             } catch (FileNotFoundException e) {
                 Handler handler = new Handler(Looper.getMainLooper());
                 handler.post(new Runnable() {
@@ -102,6 +103,15 @@ public class StockTaskService extends GcmTaskService {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        } else if (params.getTag().equals("graph")) {
+            String stockInput = params.getExtras().getString("symbol");
+            String[] symbols = {stockInput};
+            try {
+                stocks = YahooFinance.get(symbols, true);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            history = true;
         }
 
         int result = GcmNetworkManager.RESULT_FAILURE;
@@ -117,7 +127,7 @@ public class StockTaskService extends GcmTaskService {
                             null, null);
                 }
                 mContext.getContentResolver().applyBatch(QuoteProvider.AUTHORITY,
-                        Utils.stocksToContentVals(stocks));
+                        Utils.stocksToContentVals(stocks, history));
             } catch (SQLiteException | RemoteException | OperationApplicationException e) {
                 Log.e(LOG_TAG, "Error applying batch insert", e);
             }
