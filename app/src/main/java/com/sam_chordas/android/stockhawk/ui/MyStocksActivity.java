@@ -45,12 +45,12 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
 
     private static final int CURSOR_LOADER_ID = 0;
     boolean isConnected;
+    ConnectivityManager cm;
     /**
      * Used to store the last screen title. For use in {@link #restoreActionBar()}.
      */
     private CharSequence mTitle;
     private Intent mServiceIntent;
-    private ItemTouchHelper mItemTouchHelper;
     private QuoteCursorAdapter mCursorAdapter;
     private Context mContext;
     private Cursor mCursor;
@@ -58,13 +58,13 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+//        ButterKnife.bind(this);
         mContext = this;
-        ConnectivityManager cm =
-                (ConnectivityManager) mContext.getSystemService(Context.CONNECTIVITY_SERVICE);
+        cm = (ConnectivityManager) mContext.getSystemService(Context.CONNECTIVITY_SERVICE);
 
         NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-        isConnected = activeNetwork != null &&
-                activeNetwork.isConnectedOrConnecting();
+        isConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+
         setContentView(R.layout.activity_my_stocks);
         // The intent service is for executing immediate pulls from the Yahoo API
         // GCMTaskService can only schedule tasks, they cannot execute immediately
@@ -91,6 +91,7 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
                         Intent intent = new Intent(mContext, LineGraphActivity.class);
                         mCursor.moveToPosition(position);
                         intent.putExtra("symbol", mCursor.getString(mCursor.getColumnIndex(QuoteColumns.SYMBOL)));
+                        intent.putExtra("position", position);
                         startActivity(intent);
                     }
                 }));
@@ -103,6 +104,8 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+                isConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
                 if (isConnected) {
                     new MaterialDialog.Builder(mContext).title(R.string.symbol_search)
                             .content(R.string.content_test)
@@ -140,7 +143,7 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
         });
 
         ItemTouchHelper.Callback callback = new SimpleItemTouchHelperCallback(mCursorAdapter);
-        mItemTouchHelper = new ItemTouchHelper(callback);
+        ItemTouchHelper mItemTouchHelper = new ItemTouchHelper(callback);
         mItemTouchHelper.attachToRecyclerView(recyclerView);
 
         mTitle = getTitle();
@@ -193,6 +196,8 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
 
     private void refresh() {
         mServiceIntent.putExtra("tag", "periodic");
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        isConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
         if (isConnected) {
             Toast.makeText(mContext, "Refreshing", Toast.LENGTH_SHORT).show();
             startService(mServiceIntent);
@@ -225,8 +230,8 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         // This narrows the return to only the stocks that are most current.
         return new CursorLoader(this, QuoteProvider.Quotes.CONTENT_URI,
-                new String[]{QuoteColumns._ID, QuoteColumns.SYMBOL, QuoteColumns.BIDPRICE,
-                        QuoteColumns.PERCENT_CHANGE, QuoteColumns.CHANGE, QuoteColumns.ISUP},
+                new String[]{QuoteColumns._ID, QuoteColumns.SYMBOL, QuoteColumns.NAME, QuoteColumns.HISTORICAL_DATA, QuoteColumns.CURRENCY,
+                        QuoteColumns.PERCENT_CHANGE, QuoteColumns.CHANGE, QuoteColumns.BIDPRICE, QuoteColumns.ISUP},
                 QuoteColumns.ISCURRENT + " = ?",
                 new String[]{"1"},
                 null);

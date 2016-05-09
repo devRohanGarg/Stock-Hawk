@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.OperationApplicationException;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
+import android.database.sqlite.SQLiteException;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.RemoteException;
@@ -17,13 +18,14 @@ import com.google.android.gms.gcm.TaskParams;
 import com.sam_chordas.android.stockhawk.data.QuoteColumns;
 import com.sam_chordas.android.stockhawk.data.QuoteProvider;
 import com.sam_chordas.android.stockhawk.rest.Utils;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.Response;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.Map;
+
+import yahoofinance.Stock;
+import yahoofinance.YahooFinance;
 
 /**
  * Created by sam_chordas on 9/30/15.
@@ -33,9 +35,7 @@ import java.net.URLEncoder;
 public class StockTaskService extends GcmTaskService {
     private String LOG_TAG = StockTaskService.class.getSimpleName();
 
-    private OkHttpClient client = new OkHttpClient();
     private Context mContext;
-    private StringBuilder mStoredSymbols = new StringBuilder();
     private boolean isUpdate;
 
     public StockTaskService() {
@@ -45,16 +45,6 @@ public class StockTaskService extends GcmTaskService {
         mContext = context;
     }
 
-    String fetchData(String url) throws IOException {
-        Log.d(LOG_TAG,url);
-        Request request = new Request.Builder()
-                .url(url)
-                .build();
-
-        Response response = client.newCall(request).execute();
-        return response.body().string();
-    }
-
     @SuppressWarnings("unchecked")
     @Override
     public int onRunTask(TaskParams params) {
@@ -62,15 +52,8 @@ public class StockTaskService extends GcmTaskService {
         if (mContext == null) {
             mContext = this;
         }
-        StringBuilder urlStringBuilder = new StringBuilder();
-        try {
-            // Base URL for the Yahoo query
-            urlStringBuilder.append("https://query.yahooapis.com/v1/public/yql?q=");
-            urlStringBuilder.append(URLEncoder.encode("select * from yahoo.finance.quotes where symbol "
-                    + "in (", "UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
+        Map<String, Stock> stocks = null; // single request
+
         if (params.getTag().equals("init") || params.getTag().equals("periodic")) {
             isUpdate = true;
             initQueryCursor = mContext.getContentResolver().query(QuoteProvider.Quotes.CONTENT_URI,
@@ -79,49 +62,51 @@ public class StockTaskService extends GcmTaskService {
             if (initQueryCursor == null || initQueryCursor.getCount() == 0) {
                 // Init task. Populates DB with quotes for the symbols seen below
                 try {
-                    urlStringBuilder.append(
-                            URLEncoder.encode("\"YHOO\",\"AAPL\",\"GOOG\",\"MSFT\")", "UTF-8"));
-                } catch (UnsupportedEncodingException e) {
+                    String[] symbols = new String[]{"INTC", "BABA", "TSLA", "AIR.PA", "YHOO"};
+                    stocks = YahooFinance.get(symbols, true);
+                } catch (IOException e) {
                     e.printStackTrace();
                 }
             } else if (initQueryCursor.getCount() > 0) {
                 DatabaseUtils.dumpCursor(initQueryCursor);
                 initQueryCursor.moveToFirst();
+                ArrayList<String> symbolList = new ArrayList<>();
                 for (int i = 0; i < initQueryCursor.getCount(); i++) {
-                    String temp = "\"" +
-                            initQueryCursor.getString(initQueryCursor.getColumnIndex("symbol")) + "\",";
-                    mStoredSymbols.append(temp);
+                    symbolList.add(initQueryCursor.getString(initQueryCursor.getColumnIndex("symbol")));
                     initQueryCursor.moveToNext();
                 }
-                mStoredSymbols.replace(mStoredSymbols.length() - 1, mStoredSymbols.length(), ")");
                 try {
-                    urlStringBuilder.append(URLEncoder.encode(mStoredSymbols.toString(), "UTF-8"));
-                } catch (UnsupportedEncodingException e) {
+                    String[] symbols = symbolList.toArray(new String[symbolList.size()]);
+                    stocks = YahooFinance.get(symbols, true);
+                } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
+            if (initQueryCursor != null)
+                initQueryCursor.close();
         } else if (params.getTag().equals("add")) {
             isUpdate = false;
             // get symbol from params.getExtra and build query
             String stockInput = params.getExtras().getString("symbol");
             try {
-                urlStringBuilder.append(URLEncoder.encode("\"" + stockInput + "\")", "UTF-8"));
-            } catch (UnsupportedEncodingException e) {
+                String[] symbols = {stockInput};
+                stocks = YahooFinance.get(symbols, true);
+            } catch (FileNotFoundException e) {
+                Handler handler = new Handler(Looper.getMainLooper());
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(mContext.getApplicationContext(), "Non-existent stock", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            } catch (IOException e) {
                 e.printStackTrace();
             }
         }
-        // finalize the URL for the API query.
-        urlStringBuilder.append("&format=json&diagnostics=false&env=store%3A%2F%2Fdatatables."
-                + "org%2Falltableswithkeys&callback=");
 
-        String urlString;
-        String getResponse;
         int result = GcmNetworkManager.RESULT_FAILURE;
 
-//        if (urlStringBuilder != null) {
-        urlString = urlStringBuilder.toString();
-        try {
-            getResponse = fetchData(urlString);
+        if (stocks != null) {
             result = GcmNetworkManager.RESULT_SUCCESS;
             try {
                 ContentValues contentValues = new ContentValues();
@@ -132,24 +117,11 @@ public class StockTaskService extends GcmTaskService {
                             null, null);
                 }
                 mContext.getContentResolver().applyBatch(QuoteProvider.AUTHORITY,
-                        Utils.quoteJsonToContentVals(getResponse));
-            } catch (RemoteException | OperationApplicationException e) {
+                        Utils.stocksToContentVals(stocks));
+            } catch (SQLiteException | RemoteException | OperationApplicationException e) {
                 Log.e(LOG_TAG, "Error applying batch insert", e);
             }
-        } catch (NumberFormatException e) {
-            Handler handler = new Handler(Looper.getMainLooper());
-            handler.post(new Runnable() {
-                @Override
-                public void run() {
-                    Toast.makeText(mContext.getApplicationContext(), "Non-existent stock", Toast.LENGTH_SHORT).show();
-                }
-            });
-        } catch (IOException e) {
-            e.printStackTrace();
         }
-//        }
-
         return result;
     }
-
 }

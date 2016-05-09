@@ -25,12 +25,11 @@ public class StockIntentService extends IntentService {
         Log.d(StockIntentService.class.getSimpleName(), "Stock Intent Service");
         Bundle args = new Bundle();
         args.putString("symbol", intent.getStringExtra("symbol"));
-        if (intent.getStringExtra("tag").equals("add")) {
-            new StockTaskService(this).onRunTask(new TaskParams(intent.getStringExtra("tag"), args));
+        String tag = intent.getStringExtra("tag");
+        if (tag.equals("add") || tag.equals("init") || tag.equals("periodic")) {
             // We can call OnRunTask from the intent service to force it to run immediately instead of
             // scheduling a task.
-        } else if (intent.getStringExtra("tag").equals("graph")) {
-            new StockGraphService(this).onRunTask(new TaskParams(intent.getStringExtra("tag"), args));
+            new StockTaskService(this).onRunTask(new TaskParams(intent.getStringExtra("tag"), args));
         }
     }
 }
