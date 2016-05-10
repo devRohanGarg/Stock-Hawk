@@ -1,11 +1,8 @@
 package com.sam_chordas.android.stockhawk.rest;
 
 import android.content.ContentProviderOperation;
-import android.util.Log;
 
-import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.sam_chordas.android.stockhawk.data.QuoteColumns;
 import com.sam_chordas.android.stockhawk.data.QuoteProvider;
@@ -43,30 +40,6 @@ public class Utils {
         }.getType());
     }
 
-    public static String StockToJSON(Stock stock) {
-        Gson gson = new GsonBuilder()
-                .disableHtmlEscaping()
-                .setFieldNamingPolicy(FieldNamingPolicy.UPPER_CAMEL_CASE)
-                .setPrettyPrinting()
-                .serializeNulls()
-                .create();
-        String s = gson.toJson(stock);
-        Log.d(LOG_TAG + " StockToJSON", s);
-        return s;
-    }
-
-    public static Stock JSONToStock(String stock) {
-        Log.d(LOG_TAG + " JSONToStock", stock);
-        Gson gson = new GsonBuilder()
-                .disableHtmlEscaping()
-                .setFieldNamingPolicy(FieldNamingPolicy.UPPER_CAMEL_CASE)
-                .setPrettyPrinting()
-                .serializeNulls()
-                .create();
-        return gson.fromJson(stock, new TypeToken<Stock>() {
-        }.getType());
-    }
-
     public static ContentProviderOperation buildBatchOperation(Stock stock, boolean history) {
         ContentProviderOperation.Builder builder;
         if (history)
@@ -77,7 +50,9 @@ public class Utils {
             String change = String.valueOf(stock.getQuote().getChange());
             String percentage_change = String.valueOf(stock.getQuote().getChangeInPercent()) + "%";
             builder.withValue(QuoteColumns.SYMBOL, stock.getQuote().getSymbol());
-            builder.withValue(QuoteColumns.STOCK, StockToJSON(stock));
+            builder.withValue(QuoteColumns.NAME, stock.getName());
+            builder.withValue(QuoteColumns.CURRENCY, stock.getCurrency());
+            builder.withValue(QuoteColumns.BIDPRICE, String.valueOf(stock.getQuote().getBid()));
             builder.withValue(QuoteColumns.ISCURRENT, 1);
 
             if (history)
@@ -98,7 +73,7 @@ public class Utils {
             }
 
         } catch (NullPointerException | IOException e) {
-            Log.e(LOG_TAG, e.getMessage());
+            e.printStackTrace();
         }
         return builder.build();
     }

@@ -19,15 +19,16 @@ public class QuoteColumns {
     public static final String SYMBOL = "symbol";
 
     @DataType(DataType.Type.TEXT)
-    public static final String CREATED = "created";
-
-    @DataType(DataType.Type.INTEGER)
     @NotNull
-    public static final String ISCURRENT = "is_current";
+    public static final String NAME = "name";
 
-    @DataType(DataType.Type.INTEGER)
+    @DataType(DataType.Type.TEXT)
     @NotNull
-    public static final String ISUP = "is_up";
+    public static final String BIDPRICE = "bid_price";
+
+    @DataType(DataType.Type.TEXT)
+    @NotNull
+    public static final String CURRENCY = "CURRENCY";
 
     @DataType(DataType.Type.TEXT)
     @NotNull
@@ -37,9 +38,16 @@ public class QuoteColumns {
     @NotNull
     public static final String PERCENT_CHANGE = "percent_change";
 
-    @DataType(DataType.Type.TEXT)
+    @DataType(DataType.Type.INTEGER)
     @NotNull
-    public static final String STOCK = "stock";
+    public static final String ISUP = "is_up";
+
+    @DataType(DataType.Type.INTEGER)
+    @NotNull
+    public static final String ISCURRENT = "is_current";
+
+    @DataType(DataType.Type.TEXT)
+    public static final String CREATED = "created";
 
     @DataType(DataType.Type.TEXT)
     public static final String HISTORICAL_QUOTE = "historical_data";

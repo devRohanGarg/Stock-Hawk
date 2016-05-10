@@ -19,8 +19,6 @@ import com.sam_chordas.android.stockhawk.data.QuoteProvider;
 import com.sam_chordas.android.stockhawk.touch_helper.ItemTouchHelperAdapter;
 import com.sam_chordas.android.stockhawk.touch_helper.ItemTouchHelperViewHolder;
 
-import yahoofinance.Stock;
-
 /**
  * Created by sam_chordas on 10/6/15.
  * Credit to skyfishjy gist:
@@ -54,11 +52,9 @@ public class QuoteCursorAdapter extends CursorRecyclerViewAdapter<QuoteCursorAda
     @Override
     public void onBindViewHolder(final ViewHolder viewHolder, final Cursor cursor) {
         viewHolder.symbol.setText(cursor.getString(cursor.getColumnIndex(QuoteColumns.SYMBOL)));
-        Stock stock = Utils.JSONToStock(cursor.getString(cursor.getColumnIndex(QuoteColumns.STOCK)));
-//        Log.d("ADAPTER", stock.getName() + stock.getCurrency());
-        viewHolder.name.setText(stock.getName());
-        viewHolder.currency.setText(stock.getCurrency());
-        viewHolder.bidPrice.setText((CharSequence) stock.getQuote().getBid());
+        viewHolder.name.setText(cursor.getString(cursor.getColumnIndex(QuoteColumns.NAME)));
+        viewHolder.currency.setText(cursor.getString(cursor.getColumnIndex(QuoteColumns.CURRENCY)));
+        viewHolder.bidPrice.setText(cursor.getString(cursor.getColumnIndex(QuoteColumns.BIDPRICE)));
         int sdk = Build.VERSION.SDK_INT;
         if (cursor.getInt(cursor.getColumnIndex(QuoteColumns.ISUP)) == 1) {
             if (sdk < Build.VERSION_CODES.JELLY_BEAN) {

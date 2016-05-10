@@ -69,7 +69,7 @@ public class StockTaskService extends GcmTaskService {
                 if (initQueryCursor == null || initQueryCursor.getCount() == 0) {
                     // Init task. Populates DB with quotes for the symbols seen below
                     showToast("Loading...", Toast.LENGTH_SHORT);
-                    stocks = fetch(new String[]{"INTC", "BABA", "TSLA", "AIR.PA", "YHOO"});
+                    stocks = fetch(new String[]{"AIR.PA", "BABA", "INTC", "TSLA", "YHOO"}, history);
                 } else if (initQueryCursor.getCount() > 0) {
                     DatabaseUtils.dumpCursor(initQueryCursor);
                     initQueryCursor.moveToFirst();
@@ -78,39 +78,18 @@ public class StockTaskService extends GcmTaskService {
                         symbolList.add(initQueryCursor.getString(initQueryCursor.getColumnIndex("symbol")));
                         initQueryCursor.moveToNext();
                     }
-                    stocks = fetch(symbolList.toArray(new String[symbolList.size()]));
+                    stocks = fetch(symbolList.toArray(new String[symbolList.size()]), history);
                     initQueryCursor.close();
                 }
                 break;
             case "add":
                 isUpdate = false;
                 // get symbol from params.getExtra and build query
-                stocks = fetch(new String[]{params.getExtras().getString("symbol")});
+                stocks = fetch(new String[]{params.getExtras().getString("symbol")}, history);
                 break;
             case "graph":
                 history = true;
-                Stock stock = null;
-                int position = params.getExtras().getInt("position");
-                Cursor c = mContext.getContentResolver().query(QuoteProvider.Quotes.CONTENT_URI,
-                        new String[]{QuoteColumns.SYMBOL, QuoteColumns.STOCK, QuoteColumns.HISTORICAL_QUOTE}, null,
-                        null, null);
-                try {
-                    if (c != null) {
-                        c.moveToPosition(position);
-                        stock = Utils.JSONToStock(c.getString(c.getColumnIndex(QuoteColumns.STOCK)));
-                        stock.getHistory();
-                        c.close();
-                    }
-                    if (stock != null) {
-                        stocks.put(stock.getName(), stock);
-                    }
-                } catch (SocketTimeoutException e) {
-                    showToast("Socket timed out!", Toast.LENGTH_SHORT);
-                } catch (FileNotFoundException e) {
-                    showToast("Non-existent stock!", Toast.LENGTH_SHORT);
-                } catch (NullPointerException | IOException e) {
-                    e.printStackTrace();
-                }
+                fetch(new String[]{params.getExtras().getString("symbol")}, history);
                 break;
         }
 
@@ -137,10 +116,10 @@ public class StockTaskService extends GcmTaskService {
         return result;
     }
 
-    private Map<String, Stock> fetch(String[] symbols) {
+    private Map<String, Stock> fetch(String[] symbols, boolean history) {
         Map<String, Stock> stocks = null;
         try {
-            stocks = YahooFinance.get(symbols);
+            stocks = YahooFinance.get(symbols, history);
         } catch (SocketTimeoutException e) {
             showToast("Socket timed out!", Toast.LENGTH_SHORT);
         } catch (FileNotFoundException e) {

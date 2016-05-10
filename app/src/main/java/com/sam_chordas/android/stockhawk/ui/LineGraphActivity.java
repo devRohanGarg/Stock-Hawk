@@ -57,7 +57,6 @@ public class LineGraphActivity extends AppCompatActivity {
         if (isConnected) {
             mServiceIntent.putExtra("tag", "graph");
             mServiceIntent.putExtra("symbol", symbol);
-            mServiceIntent.putExtra("position", position);
             startService(mServiceIntent);
         }
 
