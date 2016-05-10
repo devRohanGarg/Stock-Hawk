@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.sam_chordas.android.stockhawk.R;
 import com.sam_chordas.android.stockhawk.data.QuoteColumns;
@@ -32,6 +33,7 @@ public class LineGraphActivity extends AppCompatActivity {
     boolean isConnected;
     ConnectivityManager cm;
     private int position;
+    private Context mContext;
     private String symbol;
     private Intent mServiceIntent;
     private String TAG = LineGraphActivity.class.getSimpleName();
@@ -41,6 +43,7 @@ public class LineGraphActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_line_graph);
+        mContext = this;
         Intent i = getIntent();
         symbol = i.getStringExtra("symbol").toUpperCase();
         position = i.getIntExtra("position", 0);
@@ -67,8 +70,9 @@ public class LineGraphActivity extends AppCompatActivity {
             c.moveToPosition(position);
             historicalQuotes = Utils.JSONToHistoricalQuote(c.getString(c.getColumnIndex(QuoteColumns.HISTORICAL_DATA)));
             c.close();
+        } else {
+            networkToast();
         }
-
 
         if (historicalQuotes != null) {
             for (HistoricalQuote quote : historicalQuotes) {
@@ -113,5 +117,9 @@ public class LineGraphActivity extends AppCompatActivity {
 //        actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);
         actionBar.setDisplayShowTitleEnabled(true);
         actionBar.setTitle(title);
+    }
+
+    public void networkToast() {
+        Toast.makeText(mContext, getString(R.string.network_toast), Toast.LENGTH_SHORT).show();
     }
 }
