@@ -3,7 +3,9 @@ package com.sam_chordas.android.stockhawk.rest;
 import android.content.ContentProviderOperation;
 import android.util.Log;
 
+import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.sam_chordas.android.stockhawk.data.QuoteColumns;
 import com.sam_chordas.android.stockhawk.data.QuoteProvider;
@@ -42,28 +44,44 @@ public class Utils {
     }
 
     public static String StockToJSON(Stock stock) {
-        return new Gson().toJson(stock);
+        Gson gson = new GsonBuilder()
+                .disableHtmlEscaping()
+                .setFieldNamingPolicy(FieldNamingPolicy.UPPER_CAMEL_CASE)
+                .setPrettyPrinting()
+                .serializeNulls()
+                .create();
+        String s = gson.toJson(stock);
+        Log.d(LOG_TAG + " StockToJSON", s);
+        return s;
     }
 
     public static Stock JSONToStock(String stock) {
-        return new Gson().fromJson(stock, new TypeToken<Stock>() {
+        Log.d(LOG_TAG + " JSONToStock", stock);
+        Gson gson = new GsonBuilder()
+                .disableHtmlEscaping()
+                .setFieldNamingPolicy(FieldNamingPolicy.UPPER_CAMEL_CASE)
+                .setPrettyPrinting()
+                .serializeNulls()
+                .create();
+        return gson.fromJson(stock, new TypeToken<Stock>() {
         }.getType());
     }
 
     public static ContentProviderOperation buildBatchOperation(Stock stock, boolean history) {
-        ContentProviderOperation.Builder builder = ContentProviderOperation.newInsert(
-                QuoteProvider.Quotes.CONTENT_URI);
+        ContentProviderOperation.Builder builder;
+        if (history)
+            builder = ContentProviderOperation.newUpdate(QuoteProvider.Quotes.CONTENT_URI);
+        else
+            builder = ContentProviderOperation.newInsert(QuoteProvider.Quotes.CONTENT_URI);
         try {
             String change = String.valueOf(stock.getQuote().getChange());
             String percentage_change = String.valueOf(stock.getQuote().getChangeInPercent()) + "%";
             builder.withValue(QuoteColumns.SYMBOL, stock.getQuote().getSymbol());
-            builder.withValue(QuoteColumns.NAME, stock.getName());
-            builder.withValue(QuoteColumns.CURRENCY, stock.getCurrency());
-            builder.withValue(QuoteColumns.BIDPRICE, String.valueOf(stock.getQuote().getBid()));
+            builder.withValue(QuoteColumns.STOCK, StockToJSON(stock));
             builder.withValue(QuoteColumns.ISCURRENT, 1);
 
             if (history)
-                builder.withValue(QuoteColumns.HISTORICAL_DATA, HistoricalQuoteToJSON(stock.getHistory()));
+                builder.withValue(QuoteColumns.HISTORICAL_QUOTE, HistoricalQuoteToJSON(stock.getHistory()));
 
             if (percentage_change.charAt(0) == '-') {
                 builder.withValue(QuoteColumns.PERCENT_CHANGE, percentage_change);

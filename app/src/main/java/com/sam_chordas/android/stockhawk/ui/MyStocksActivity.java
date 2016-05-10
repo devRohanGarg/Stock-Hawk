@@ -46,6 +46,7 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
     private static final int CURSOR_LOADER_ID = 0;
     boolean isConnected;
     ConnectivityManager cm;
+    MaterialDialog mDialog;
     /**
      * Used to store the last screen title. For use in {@link #restoreActionBar()}.
      */
@@ -107,38 +108,10 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
                 NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
                 isConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
                 if (isConnected) {
-                    new MaterialDialog.Builder(mContext).title(R.string.symbol_search)
-                            .content(R.string.content_test)
-                            .inputType(InputType.TYPE_CLASS_TEXT)
-                            .input(R.string.input_hint, R.string.input_prefill, new MaterialDialog.InputCallback() {
-                                @Override
-                                public void onInput(@NonNull MaterialDialog dialog, CharSequence input) {
-                                    // On FAB click, receive user input. Make sure the stock doesn't already exist
-                                    // in the DB and proceed accordingly
-                                    Cursor c = getContentResolver().query(QuoteProvider.Quotes.CONTENT_URI,
-                                            new String[]{QuoteColumns.SYMBOL}, QuoteColumns.SYMBOL + "= ?",
-                                            new String[]{input.toString()}, null);
-                                    if (c != null && c.getCount() != 0) {
-                                        Toast toast =
-                                                Toast.makeText(MyStocksActivity.this, "This stock is already saved!",
-                                                        Toast.LENGTH_LONG);
-                                        toast.setGravity(Gravity.CENTER, Gravity.CENTER, 0);
-                                        toast.show();
-                                        c.close();
-                                        //return;
-                                    } else {
-                                        // Add the stock to DB
-                                        mServiceIntent.putExtra("tag", "add");
-                                        mServiceIntent.putExtra("symbol", input.toString());
-                                        startService(mServiceIntent);
-                                    }
-                                }
-                            })
-                            .show();
+                    showDialog();
                 } else {
                     networkToast();
                 }
-
             }
         });
 
@@ -168,6 +141,42 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
         }
     }
 
+    private void showDialog() {
+        MaterialDialog.Builder builder = new MaterialDialog.Builder(mContext).title(R.string.symbol_search)
+                .content(R.string.content_test)
+                .inputType(InputType.TYPE_CLASS_TEXT)
+                .input(R.string.input_hint, R.string.input_prefill, new MaterialDialog.InputCallback() {
+                    @Override
+                    public void onInput(@NonNull MaterialDialog dialog, CharSequence input) {
+                        // On FAB click, receive user input. Make sure the stock doesn't already exist
+                        // in the DB and proceed accordingly
+                        Cursor c = getContentResolver().query(QuoteProvider.Quotes.CONTENT_URI,
+                                new String[]{QuoteColumns.SYMBOL}, QuoteColumns.SYMBOL + "= ?",
+                                new String[]{input.toString()}, null);
+                        if (c != null && c.getCount() != 0) {
+                            Toast toast = Toast.makeText(MyStocksActivity.this, getString(R.string.stock_already_saved), Toast.LENGTH_LONG);
+                            toast.setGravity(Gravity.CENTER, Gravity.CENTER, 0);
+                            toast.show();
+                            c.close();
+                            //return;
+                        } else {
+                            // Add the stock to DB
+                            mServiceIntent.putExtra("tag", "add");
+                            mServiceIntent.putExtra("symbol", input.toString());
+                            startService(mServiceIntent);
+                        }
+                    }
+                });
+        mDialog = builder.build();
+        mDialog.show();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mDialog != null)
+            mDialog.dismiss();
+    }
 
     @Override
     public void onResume() {
@@ -199,7 +208,7 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
         NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
         isConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
         if (isConnected) {
-            Toast.makeText(mContext, "Refreshing", Toast.LENGTH_SHORT).show();
+            Toast.makeText(mContext, getString(R.string.refreshing), Toast.LENGTH_SHORT).show();
             startService(mServiceIntent);
         } else {
             networkToast();
@@ -230,8 +239,8 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         // This narrows the return to only the stocks that are most current.
         return new CursorLoader(this, QuoteProvider.Quotes.CONTENT_URI,
-                new String[]{QuoteColumns._ID, QuoteColumns.SYMBOL, QuoteColumns.NAME, QuoteColumns.HISTORICAL_DATA, QuoteColumns.CURRENCY,
-                        QuoteColumns.PERCENT_CHANGE, QuoteColumns.CHANGE, QuoteColumns.BIDPRICE, QuoteColumns.ISUP},
+                new String[]{QuoteColumns._ID, QuoteColumns.SYMBOL, QuoteColumns.CREATED, QuoteColumns.ISCURRENT, QuoteColumns.ISUP,
+                        QuoteColumns.CHANGE, QuoteColumns.PERCENT_CHANGE, QuoteColumns.STOCK, QuoteColumns.HISTORICAL_QUOTE},
                 QuoteColumns.ISCURRENT + " = ?",
                 new String[]{"1"},
                 null);

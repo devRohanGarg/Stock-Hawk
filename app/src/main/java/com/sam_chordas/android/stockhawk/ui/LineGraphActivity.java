@@ -57,18 +57,19 @@ public class LineGraphActivity extends AppCompatActivity {
         if (isConnected) {
             mServiceIntent.putExtra("tag", "graph");
             mServiceIntent.putExtra("symbol", symbol);
+            mServiceIntent.putExtra("position", position);
             startService(mServiceIntent);
         }
 
         Cursor c = getContentResolver().query(QuoteProvider.Quotes.CONTENT_URI,
-                new String[]{QuoteColumns.SYMBOL, QuoteColumns.HISTORICAL_DATA}, null,
+                new String[]{QuoteColumns.SYMBOL, QuoteColumns.HISTORICAL_QUOTE}, null,
                 null, null);
 
         List<HistoricalQuote> historicalQuotes = null;
 
         if (c != null) {
             c.moveToPosition(position);
-            historicalQuotes = Utils.JSONToHistoricalQuote(c.getString(c.getColumnIndex(QuoteColumns.HISTORICAL_DATA)));
+            historicalQuotes = Utils.JSONToHistoricalQuote(c.getString(c.getColumnIndex(QuoteColumns.HISTORICAL_QUOTE)));
             c.close();
         } else {
             networkToast();

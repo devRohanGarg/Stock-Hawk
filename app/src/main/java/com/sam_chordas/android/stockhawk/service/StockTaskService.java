@@ -23,6 +23,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 
 import yahoofinance.Stock;
@@ -51,10 +52,9 @@ public class StockTaskService extends GcmTaskService {
     @SuppressWarnings("unchecked")
     @Override
     public int onRunTask(TaskParams params) {
-        Map<String, Stock> stocks = null; // single request
+        Map<String, Stock> stocks = new HashMap<>(); // single request
         String PARAM_TAG = params.getTag();
 
-        Cursor initQueryCursor;
         if (mContext == null) {
             mContext = this;
         }
@@ -63,7 +63,7 @@ public class StockTaskService extends GcmTaskService {
             case "init":
             case "periodic":
                 isUpdate = true;
-                initQueryCursor = mContext.getContentResolver().query(QuoteProvider.Quotes.CONTENT_URI,
+                Cursor initQueryCursor = mContext.getContentResolver().query(QuoteProvider.Quotes.CONTENT_URI,
                         new String[]{"Distinct " + QuoteColumns.SYMBOL}, null,
                         null, null);
                 if (initQueryCursor == null || initQueryCursor.getCount() == 0) {
@@ -89,6 +89,28 @@ public class StockTaskService extends GcmTaskService {
                 break;
             case "graph":
                 history = true;
+                Stock stock = null;
+                int position = params.getExtras().getInt("position");
+                Cursor c = mContext.getContentResolver().query(QuoteProvider.Quotes.CONTENT_URI,
+                        new String[]{QuoteColumns.SYMBOL, QuoteColumns.STOCK, QuoteColumns.HISTORICAL_QUOTE}, null,
+                        null, null);
+                try {
+                    if (c != null) {
+                        c.moveToPosition(position);
+                        stock = Utils.JSONToStock(c.getString(c.getColumnIndex(QuoteColumns.STOCK)));
+                        stock.getHistory();
+                        c.close();
+                    }
+                    if (stock != null) {
+                        stocks.put(stock.getName(), stock);
+                    }
+                } catch (SocketTimeoutException e) {
+                    showToast("Socket timed out!", Toast.LENGTH_SHORT);
+                } catch (FileNotFoundException e) {
+                    showToast("Non-existent stock!", Toast.LENGTH_SHORT);
+                } catch (NullPointerException | IOException e) {
+                    e.printStackTrace();
+                }
                 break;
         }
 
