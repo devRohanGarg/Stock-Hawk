@@ -21,6 +21,7 @@ import com.sam_chordas.android.stockhawk.rest.Utils;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.Map;
 
@@ -63,8 +64,23 @@ public class StockTaskService extends GcmTaskService {
             if (initQueryCursor == null || initQueryCursor.getCount() == 0) {
                 // Init task. Populates DB with quotes for the symbols seen below
                 try {
+                    Handler handler = new Handler(Looper.getMainLooper());
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(mContext.getApplicationContext(), "Loading...", Toast.LENGTH_SHORT).show();
+                        }
+                    });
                     String[] symbols = new String[]{"INTC", "BABA", "TSLA", "AIR.PA", "YHOO"};
                     stocks = YahooFinance.get(symbols);
+                } catch (SocketTimeoutException e) {
+                    Handler handler = new Handler(Looper.getMainLooper());
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(mContext.getApplicationContext(), "Socket timed out! Please check your internet connection and try again", Toast.LENGTH_SHORT).show();
+                        }
+                    });
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -79,6 +95,14 @@ public class StockTaskService extends GcmTaskService {
                 try {
                     String[] symbols = symbolList.toArray(new String[symbolList.size()]);
                     stocks = YahooFinance.get(symbols);
+                } catch (SocketTimeoutException e) {
+                    Handler handler = new Handler(Looper.getMainLooper());
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(mContext.getApplicationContext(), "Socket timed out! Please check your internet connection and try again", Toast.LENGTH_SHORT).show();
+                        }
+                    });
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -92,6 +116,14 @@ public class StockTaskService extends GcmTaskService {
             try {
                 String[] symbols = {stockInput};
                 stocks = YahooFinance.get(symbols);
+            } catch (SocketTimeoutException e) {
+                Handler handler = new Handler(Looper.getMainLooper());
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(mContext.getApplicationContext(), "Socket timed out! Please check your internet connection and try again", Toast.LENGTH_SHORT).show();
+                    }
+                });
             } catch (FileNotFoundException e) {
                 Handler handler = new Handler(Looper.getMainLooper());
                 handler.post(new Runnable() {
@@ -108,6 +140,14 @@ public class StockTaskService extends GcmTaskService {
             String[] symbols = {stockInput};
             try {
                 stocks = YahooFinance.get(symbols, true);
+            } catch (SocketTimeoutException e) {
+                Handler handler = new Handler(Looper.getMainLooper());
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(mContext.getApplicationContext(), "Socket timed out! Please check your internet connection and try again", Toast.LENGTH_SHORT).show();
+                    }
+                });
             } catch (IOException e) {
                 e.printStackTrace();
             }
