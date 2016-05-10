@@ -168,8 +168,16 @@ public class StockTaskService extends GcmTaskService {
                 }
                 mContext.getContentResolver().applyBatch(QuoteProvider.AUTHORITY,
                         Utils.stocksToContentVals(stocks, history));
-            } catch (SQLiteException | RemoteException | OperationApplicationException e) {
+            } catch (RemoteException | OperationApplicationException e) {
                 Log.e(LOG_TAG, "Error applying batch insert", e);
+            } catch (SQLiteException e) {
+                Handler handler = new Handler(Looper.getMainLooper());
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(mContext.getApplicationContext(), "Non-existent stock", Toast.LENGTH_SHORT).show();
+                    }
+                });
             }
         }
         return result;

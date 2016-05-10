@@ -69,7 +69,7 @@ public class Utils {
                 builder.withValue(QuoteColumns.ISUP, 1);
             }
 
-        } catch (IOException | NullPointerException e) {
+        } catch (NullPointerException | IOException e) {
             e.printStackTrace();
         }
         return builder.build();
