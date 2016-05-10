@@ -1,6 +1,7 @@
 package com.sam_chordas.android.stockhawk.rest;
 
 import android.content.ContentProviderOperation;
+import android.util.Log;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -40,6 +41,15 @@ public class Utils {
         }.getType());
     }
 
+    public static String StockToJSON(Stock stock) {
+        return new Gson().toJson(stock);
+    }
+
+    public static Stock JSONToStock(String stock) {
+        return new Gson().fromJson(stock, new TypeToken<Stock>() {
+        }.getType());
+    }
+
     public static ContentProviderOperation buildBatchOperation(Stock stock, boolean history) {
         ContentProviderOperation.Builder builder = ContentProviderOperation.newInsert(
                 QuoteProvider.Quotes.CONTENT_URI);
@@ -70,7 +80,7 @@ public class Utils {
             }
 
         } catch (NullPointerException | IOException e) {
-            e.printStackTrace();
+            Log.e(LOG_TAG, e.getMessage());
         }
         return builder.build();
     }
