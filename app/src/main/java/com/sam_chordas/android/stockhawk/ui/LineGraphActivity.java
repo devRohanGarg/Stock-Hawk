@@ -1,7 +1,10 @@
 package com.sam_chordas.android.stockhawk.ui;
 
+import android.app.LoaderManager;
 import android.content.Context;
+import android.content.CursorLoader;
 import android.content.Intent;
+import android.content.Loader;
 import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -26,8 +29,9 @@ import yahoofinance.histquotes.HistoricalQuote;
 /**
  * Created by Rohan Garg on 23-04-2016.
  */
-public class LineGraphActivity extends AppCompatActivity {
+public class LineGraphActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
 
+    private static final int CURSOR_LOADER_ID = 0;
     Map<String, Stock> stocks;
     String data;
     boolean isConnected;
@@ -37,6 +41,7 @@ public class LineGraphActivity extends AppCompatActivity {
     private String symbol;
     private Intent mServiceIntent;
     private String TAG = LineGraphActivity.class.getSimpleName();
+    private Cursor mCursor;
 
     @SuppressWarnings("unchecked")
     @Override
@@ -57,28 +62,32 @@ public class LineGraphActivity extends AppCompatActivity {
         if (isConnected) {
             mServiceIntent.putExtra("tag", "graph");
             mServiceIntent.putExtra("symbol", symbol);
+            mServiceIntent.putExtra("position", position);
             startService(mServiceIntent);
-        }
+        } else networkToast();
 
-        Cursor c = getContentResolver().query(QuoteProvider.Quotes.CONTENT_URI,
-                new String[]{QuoteColumns.SYMBOL, QuoteColumns.HISTORICAL_QUOTE}, null,
-                null, null);
+        getLoaderManager().initLoader(CURSOR_LOADER_ID, null, this);
 
-        List<HistoricalQuote> historicalQuotes = null;
-
-        if (c != null) {
-            c.moveToPosition(position);
-            historicalQuotes = Utils.JSONToHistoricalQuote(c.getString(c.getColumnIndex(QuoteColumns.HISTORICAL_QUOTE)));
-            c.close();
-        } else {
-            networkToast();
-        }
-
-        if (historicalQuotes != null) {
-            for (HistoricalQuote quote : historicalQuotes) {
-                Log.d(TAG, String.valueOf(quote.getDate()) + " : " + String.valueOf(quote.getHigh()));
-            }
-        }
+//        Cursor c = getContentResolver().query(QuoteProvider.Quotes.CONTENT_URI,
+//                new String[]{QuoteColumns.SYMBOL, QuoteColumns.HISTORICAL_QUOTE}, null,
+//                null, null);
+//
+//        List<HistoricalQuote> historicalQuotes = null;
+//
+//        if (c != null) {
+//            c.moveToPosition(position);
+//            Log.d(TAG," QUOTE:"+c.getString(c.getColumnIndex(QuoteColumns.HISTORICAL_QUOTE)));
+//            historicalQuotes = Utils.JSONToHistoricalQuote(c.getString(c.getColumnIndex(QuoteColumns.HISTORICAL_QUOTE)));
+//            c.close();
+//        } else {
+//            networkToast();
+//        }
+//
+//        if (historicalQuotes != null) {
+//            for (HistoricalQuote quote : historicalQuotes) {
+//                Log.d(TAG, String.valueOf(quote.getDate()) + " : " + String.valueOf(quote.getHigh()));
+//            }
+//        }
 //        LineChartView mChart = (LineChartView) findViewById(R.id.linechart);
 //        LineSet dataset = new LineSet(mLabels, mValues[1]);
 //        dataset.setColor(Color.parseColor("#758cbb"))
@@ -114,12 +123,46 @@ public class LineGraphActivity extends AppCompatActivity {
     public void setActionBarTitle(String title) {
         ActionBar actionBar = getSupportActionBar();
         assert actionBar != null;
-//        actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);
         actionBar.setDisplayShowTitleEnabled(true);
         actionBar.setTitle(title);
     }
 
     public void networkToast() {
         Toast.makeText(mContext, getString(R.string.network_toast), Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        // This narrows the return to only the stocks that are most current.
+        return new CursorLoader(this, QuoteProvider.Quotes.CONTENT_URI,
+                new String[]{QuoteColumns.SYMBOL, QuoteColumns.HISTORICAL_QUOTE}, null,
+                null, null);
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+        mCursor = data;
+
+        List<HistoricalQuote> historicalQuotes = null;
+
+        if (mCursor != null) {
+            mCursor.moveToPosition(position);
+            historicalQuotes = Utils.JSONToHistoricalQuote(mCursor.getString(mCursor.getColumnIndex(QuoteColumns.HISTORICAL_QUOTE)));
+            mCursor.close();
+        } else {
+            networkToast();
+        }
+
+        if (historicalQuotes != null) {
+            for (HistoricalQuote quote : historicalQuotes) {
+                Log.d(TAG, String.valueOf(quote.getDate()) + " : " + String.valueOf(quote.getHigh()));
+            }
+        }
+
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+        mCursor = null;
     }
 }
