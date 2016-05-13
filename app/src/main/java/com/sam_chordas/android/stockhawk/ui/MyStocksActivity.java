@@ -152,17 +152,17 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
                         // in the DB and proceed accordingly
                         Cursor c = getContentResolver().query(QuoteProvider.Quotes.CONTENT_URI,
                                 new String[]{QuoteColumns.SYMBOL}, QuoteColumns.SYMBOL + "= ?",
-                                new String[]{input.toString()}, null);
+                                new String[]{input.toString().toUpperCase()}, null);
                         if (c != null && c.getCount() != 0) {
                             Toast toast = Toast.makeText(MyStocksActivity.this, getString(R.string.stock_already_saved), Toast.LENGTH_LONG);
-                            toast.setGravity(Gravity.CENTER, Gravity.CENTER, 0);
+                            toast.setGravity(Gravity.CENTER, 0, 0);
                             toast.show();
                             c.close();
                             //return;
                         } else {
                             // Add the stock to DB
                             mServiceIntent.putExtra("tag", "add");
-                            mServiceIntent.putExtra("symbol", input.toString());
+                            mServiceIntent.putExtra("symbol", input.toString().toUpperCase());
                             startService(mServiceIntent);
                         }
                     }
@@ -174,8 +174,9 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (mDialog != null)
+        if (mDialog != null && mDialog.isShowing()) {
             mDialog.dismiss();
+        }
     }
 
     @Override
