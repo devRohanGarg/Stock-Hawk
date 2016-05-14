@@ -5,14 +5,12 @@ import android.content.Context;
 import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.Loader;
-import android.database.ContentObserver;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -52,6 +50,7 @@ public class LineGraphActivity extends AppCompatActivity implements LoaderManage
     private String LOG_TAG = LineGraphActivity.class.getSimpleName();
     private Cursor mCursor;
     private MaterialDialog mDialog;
+//    private ContentObserver mObserver;
 
     @SuppressWarnings("unchecked")
     @Override
@@ -85,21 +84,24 @@ public class LineGraphActivity extends AppCompatActivity implements LoaderManage
 
         getLoaderManager().initLoader(CURSOR_LOADER_ID, null, this);
 
-        getContentResolver().registerContentObserver(QuoteProvider.Quotes.CONTENT_URI, false, new ContentObserver(new Handler()) {
-            @Override
-            public void onChange(boolean selfChange) {
-                super.onChange(selfChange);
-                restartLoader();
-                if (mDialog != null && mDialog.isShowing())
-                    mDialog.dismiss();
-            }
-        });
+//        mObserver = new ContentObserver(new Handler()) {
+//            @Override
+//            public void onChange(boolean selfChange) {
+//                super.onChange(selfChange);
+//                restartLoader();
+//                if (mDialog != null && mDialog.isShowing())
+//                    mDialog.dismiss();
+//            }
+//        };
+//
+//        getContentResolver().registerContentObserver(QuoteProvider.Quotes.CONTENT_URI, false, mObserver);
 
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
+//        getContentResolver().unregisterContentObserver(mObserver);
         if (mDialog != null && mDialog.isShowing()) {
             mDialog.dismiss();
         }

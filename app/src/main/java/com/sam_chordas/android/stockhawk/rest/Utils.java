@@ -47,7 +47,7 @@ public class Utils {
     public static ContentProviderOperation buildBatchOperation(Stock stock, boolean isUpdate, boolean history) {
         ContentProviderOperation.Builder builder;
         Log.d(LOG_TAG, String.valueOf(history));
-        if (isUpdate || history)
+        if (isUpdate)
             builder = ContentProviderOperation.newUpdate(QuoteProvider.Quotes.CONTENT_URI);
         else
             builder = ContentProviderOperation.newInsert(QuoteProvider.Quotes.CONTENT_URI);
