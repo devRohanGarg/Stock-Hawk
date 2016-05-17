@@ -5,12 +5,14 @@ import android.content.Context;
 import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.Loader;
+import android.database.ContentObserver;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -50,7 +52,7 @@ public class LineGraphActivity extends AppCompatActivity implements LoaderManage
     private String LOG_TAG = LineGraphActivity.class.getSimpleName();
     private Cursor mCursor;
     private MaterialDialog mDialog;
-//    private ContentObserver mObserver;
+    private ContentObserver mObserver;
 
     @SuppressWarnings("unchecked")
     @Override
@@ -70,38 +72,35 @@ public class LineGraphActivity extends AppCompatActivity implements LoaderManage
         Intent mServiceIntent = new Intent(this, StockIntentService.class);
 
         MaterialDialog.Builder builder = new MaterialDialog.Builder(this)
-                .title(R.string.loading)
+                .title(R.string.syncing)
                 .content(R.string.please_wait)
                 .progress(true, 0);
         mDialog = builder.build();
 
-        if (isConnected) {
+        if (savedInstanceState == null && isConnected) {
             mServiceIntent.putExtra("tag", "graph");
             mServiceIntent.putExtra("symbol", symbol);
             startService(mServiceIntent);
             mDialog.show();
         }
 
+        mObserver = new ContentObserver(new Handler()) {
+            @Override
+            public void onChange(boolean selfChange) {
+                super.onChange(selfChange);
+                showGraph();
+                if (mDialog != null && mDialog.isShowing())
+                    mDialog.dismiss();
+            }
+        };
+        getContentResolver().registerContentObserver(QuoteProvider.Quotes.CONTENT_URI, false, mObserver);
         getLoaderManager().initLoader(CURSOR_LOADER_ID, null, this);
-
-//        mObserver = new ContentObserver(new Handler()) {
-//            @Override
-//            public void onChange(boolean selfChange) {
-//                super.onChange(selfChange);
-//                restartLoader();
-//                if (mDialog != null && mDialog.isShowing())
-//                    mDialog.dismiss();
-//            }
-//        };
-//
-//        getContentResolver().registerContentObserver(QuoteProvider.Quotes.CONTENT_URI, false, mObserver);
-
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-//        getContentResolver().unregisterContentObserver(mObserver);
+        getContentResolver().unregisterContentObserver(mObserver);
         if (mDialog != null && mDialog.isShowing()) {
             mDialog.dismiss();
         }
@@ -194,7 +193,7 @@ public class LineGraphActivity extends AppCompatActivity implements LoaderManage
                 mChart
                         .setTypeface(robotoLight)
 //                        .setBorderSpacing(Tools.fromDpToPx(8))
-                        .setAxisBorderValues((int) x_axis_start - (int) x_axis_start / 8, (int) y_axis_start + (int) y_axis_start / 8)
+                        .setAxisBorderValues((int) x_axis_start - (int) x_axis_start / 8, (int) y_axis_start + (int) y_axis_start / 4)
                         .setFontSize((int) Tools.fromDpToPx(14))
                         .setYLabels(AxisController.LabelPosition.OUTSIDE)
                         .setYLabels(AxisController.LabelPosition.NONE)

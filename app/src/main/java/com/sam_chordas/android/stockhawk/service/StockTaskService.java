@@ -69,7 +69,6 @@ public class StockTaskService extends GcmTaskService {
                     Log.d(LOG_TAG, "INIT");
                     // Init task. Populates DB with quotes for the symbols seen below
                     isUpdate = false;
-                    showToast("Loading...", Toast.LENGTH_SHORT);
                     stocks = fetch(new String[]{"AIR.PA", "INTC", "TSLA", "YHOO"}, history);
                 } else if (initQueryCursor.getCount() > 0) {
                     Log.d(LOG_TAG, "PERIODIC");
@@ -103,16 +102,6 @@ public class StockTaskService extends GcmTaskService {
         if (stocks != null) {
             result = GcmNetworkManager.RESULT_SUCCESS;
             try {
-//                ContentValues contentValues = new ContentValues();
-//                // update ISCURRENT to 0 (false) so new data is current
-//                if (isUpdate) {
-//                    contentValues.put(QuoteColumns.ISCURRENT, 0);
-//                    mContext.getContentResolver().update(QuoteProvider.Quotes.CONTENT_URI, contentValues,
-//                            null, null);
-//                } else if (history) {
-//                    contentValues.put(QuoteColumns.ISCURRENT, 0);
-//                    mContext.getContentResolver().update(QuoteProvider.Quotes.withSymbol(params.getExtras().getString("symbol")), contentValues, null, null);
-//                }
                 mContext.getContentResolver().applyBatch(QuoteProvider.AUTHORITY, Utils.stocksToContentVals(stocks, isUpdate, history));
             } catch (RemoteException | OperationApplicationException e) {
                 Log.e(LOG_TAG, "Error applying batch insert", e);
@@ -120,6 +109,8 @@ public class StockTaskService extends GcmTaskService {
                 Log.e(LOG_TAG, e.getMessage());
                 showToast("Non-existent stock", Toast.LENGTH_SHORT);
             }
+            //TODO: Arabic string
+            showToast("Stocks synced", Toast.LENGTH_SHORT);
         }
         return result;
     }

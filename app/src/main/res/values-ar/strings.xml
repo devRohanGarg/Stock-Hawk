@@ -1,12 +1,12 @@
 <resources>
     <string name="action_settings">إعدادات</string>
-    <string name="action_refresh">اعادة تنشيط</string>
+    <!--<string name="action_sync">اعادة تنشيط</string>-->
     <string name="action_change_units">وحدات التغيير</string>
     <string name="symbol_search">رمز البحث</string>
     <string name="content_test">بحث عن الأوراق المالية رمز</string>
     <string name="network_toast">اه اوه! هذا التطبيق يتطلب اتصال بالإنترنت</string>
     <string name="fab_add">إضافة</string>
     <string name="stock_already_saved">يتم حفظ هذه الأسهم بالفعل</string>
-    <string name="refreshing">منعش</string>
+    <!--<string name="syncing">منعش</string>-->
     <string name="no_data">لا تتوافر بيانات</string>
 </resources>

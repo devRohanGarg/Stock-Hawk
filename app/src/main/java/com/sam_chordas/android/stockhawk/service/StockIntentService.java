@@ -5,12 +5,15 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 
+import com.google.android.gms.gcm.GcmNetworkManager;
 import com.google.android.gms.gcm.TaskParams;
 
 /**
  * Created by sam_chordas on 10/1/15.
  */
 public class StockIntentService extends IntentService {
+
+    public static final String APPWIDGET_UPDATE = "com.sam_chordas.android.stockhawk.APPWIDGET_UPDATE";
 
     public StockIntentService() {
         super(StockIntentService.class.getName());
@@ -29,7 +32,10 @@ public class StockIntentService extends IntentService {
         if (tag.equals("add") || tag.equals("init") || tag.equals("periodic") || tag.equals("graph")) {
             // We can call OnRunTask from the intent service to force it to run immediately instead of
             // scheduling a task.
-            new StockTaskService(this).onRunTask(new TaskParams(intent.getStringExtra("tag"), args));
+            int result = new StockTaskService(this).onRunTask(new TaskParams(intent.getStringExtra("tag"), args));
+            if (result == GcmNetworkManager.RESULT_SUCCESS) {
+                sendBroadcast(new Intent(APPWIDGET_UPDATE));
+            }
         }
     }
 }

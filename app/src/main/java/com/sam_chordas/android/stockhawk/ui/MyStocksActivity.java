@@ -5,12 +5,10 @@ import android.content.Context;
 import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.Loader;
-import android.database.ContentObserver;
 import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -57,12 +55,10 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
     private QuoteCursorAdapter mCursorAdapter;
     private Context mContext;
     private Cursor mCursor;
-    private ContentObserver mObserver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-//        ButterKnife.bind(this);
         mContext = this;
         cm = (ConnectivityManager) mContext.getSystemService(Context.CONNECTIVITY_SERVICE);
 
@@ -143,17 +139,6 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
             // are updated.
             GcmNetworkManager.getInstance(this).schedule(periodicTask);
         }
-
-        mObserver = new ContentObserver(new Handler()) {
-            @Override
-            public void onChange(boolean selfChange) {
-                super.onChange(selfChange);
-                if (mCursorAdapter != null)
-                    mCursorAdapter.notifyDataSetChanged();
-            }
-        };
-
-        getContentResolver().registerContentObserver(QuoteProvider.Quotes.CONTENT_URI, false, mObserver);
     }
 
     private void showDialog() {
@@ -189,7 +174,6 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        getContentResolver().unregisterContentObserver(mObserver);
         if (mDialog != null && mDialog.isShowing()) {
             mDialog.dismiss();
         }
@@ -225,7 +209,7 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
         NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
         isConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
         if (isConnected) {
-            Toast.makeText(mContext, getString(R.string.refreshing), Toast.LENGTH_SHORT).show();
+            Toast.makeText(mContext, getString(R.string.syncing), Toast.LENGTH_SHORT).show();
             startService(mServiceIntent);
         } else {
             networkToast();
