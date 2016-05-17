@@ -1,7 +1,17 @@
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/widget_background"
+    android:orientation="vertical">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/material_blue_700"
+        android:padding="8dp"
+        android:text="Stock Market"
+        android:textSize="16sp" />
 
     <ListView
         android:id="@+id/widget_list"
@@ -18,4 +28,4 @@
         android:textColor="#ffffff"
         android:textSize="20sp"
         android:visibility="gone" />
-</FrameLayout>
+</LinearLayout>
