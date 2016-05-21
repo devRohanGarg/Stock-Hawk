@@ -26,10 +26,10 @@ public class WidgetProvider extends AppWidgetProvider {
         final int N = appWidgetIds.length;
         /*int[] appWidgetIds holds ids of multiple instance of your widget
          * meaning you are placing more than one widgets on your homescreen*/
-        for (int i = 0; i < N; ++i) {
+        for (int appWidgetId : appWidgetIds) {
             RemoteViews remoteViews = updateWidgetListView(context,
-                    appWidgetIds[i]);
-            appWidgetManager.updateAppWidget(appWidgetIds[i], remoteViews);
+                    appWidgetId);
+            appWidgetManager.updateAppWidget(appWidgetId, remoteViews);
         }
         super.onUpdate(context, appWidgetManager, appWidgetIds);
     }
@@ -48,7 +48,9 @@ public class WidgetProvider extends AppWidgetProvider {
         //don't know its purpose to me right now
         svcIntent.setData(Uri.parse(svcIntent.toUri(Intent.URI_INTENT_SCHEME)));
         //setting adapter to listview of the widget
-        remoteViews.setRemoteAdapter(appWidgetId, R.id.widget_list,
+//        remoteViews.setRemoteAdapter(appWidgetId, R.id.widget_list,
+//                svcIntent);
+        remoteViews.setRemoteAdapter(R.id.widget_list,
                 svcIntent);
         //setting an empty view in case of no data
         remoteViews.setEmptyView(R.id.widget_list, R.id.empty_view);
