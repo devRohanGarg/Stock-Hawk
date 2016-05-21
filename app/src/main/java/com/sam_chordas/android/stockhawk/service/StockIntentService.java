@@ -1,19 +1,20 @@
 package com.sam_chordas.android.stockhawk.service;
 
 import android.app.IntentService;
+import android.appwidget.AppWidgetManager;
+import android.content.ComponentName;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 
 import com.google.android.gms.gcm.GcmNetworkManager;
 import com.google.android.gms.gcm.TaskParams;
+import com.sam_chordas.android.stockhawk.widget.WidgetProvider;
 
 /**
  * Created by sam_chordas on 10/1/15.
  */
 public class StockIntentService extends IntentService {
-
-    public static final String APPWIDGET_UPDATE = "com.sam_chordas.android.stockhawk.APPWIDGET_UPDATE";
 
     public StockIntentService() {
         super(StockIntentService.class.getName());
@@ -34,7 +35,13 @@ public class StockIntentService extends IntentService {
             // scheduling a task.
             int result = new StockTaskService(this).onRunTask(new TaskParams(intent.getStringExtra("tag"), args));
             if (result == GcmNetworkManager.RESULT_SUCCESS) {
-                sendBroadcast(new Intent(APPWIDGET_UPDATE));
+                Log.d("StockIntentService", "SYNCED");
+                Intent i = new Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
+                // Use an array and EXTRA_APPWIDGET_IDS instead of AppWidgetManager.EXTRA_APPWIDGET_ID,
+                // since it seems the onUpdate() is only fired on that:
+                int[] ids = AppWidgetManager.getInstance(this).getAppWidgetIds(new ComponentName(this, WidgetProvider.class));
+                i.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids);
+                sendBroadcast(i);
             }
         }
     }

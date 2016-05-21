@@ -7,9 +7,7 @@ package com.sam_chordas.android.stockhawk.widget;
 import android.appwidget.AppWidgetManager;
 import android.content.Context;
 import android.content.Intent;
-import android.database.ContentObserver;
 import android.database.Cursor;
-import android.os.Handler;
 import android.util.Log;
 import android.widget.RemoteViews;
 import android.widget.RemoteViewsService.RemoteViewsFactory;
@@ -30,23 +28,18 @@ public class ListProvider implements RemoteViewsFactory {
 
     public ListProvider(Context context, Intent intent) {
         this.context = context;
-        appWidgetId = intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID,
-                AppWidgetManager.INVALID_APPWIDGET_ID);
+        Log.d("ListProvider", "Constructor");
+        appWidgetId = intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID);
         populateListItem();
     }
 
     private void populateListItem() {
+        Log.d("ListProvider", "Populating List");
         mCursor = context.getContentResolver().query(QuoteProvider.Quotes.CONTENT_URI, new String[]{QuoteColumns.SYMBOL, QuoteColumns.NAME, QuoteColumns.BIDPRICE, QuoteColumns.CURRENCY,
                         QuoteColumns.CHANGE, QuoteColumns.PERCENT_CHANGE, QuoteColumns.ISUP}, QuoteColumns.ISCURRENT + " = ?",
                 new String[]{"1"},
                 null);
-        mCursor.registerContentObserver(new ContentObserver(new Handler()) {
-            @Override
-            public void onChange(boolean selfChange) {
-                super.onChange(selfChange);
-                Log.d("TAG", "CHANGE");
-            }
-        });
+        Log.d("ListProvider", "List populated");
     }
 
     @Override
