@@ -10,7 +10,7 @@
         android:layout_height="wrap_content"
         android:background="@color/material_blue_500"
         android:padding="8dp"
-        android:text="Stock Market"
+        android:text="@string/widget_title"
         android:textAppearance="@style/PercentChangeTextStyle"
         android:textSize="16sp" />
 
@@ -25,7 +25,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:gravity="center"
-        android:text="No data!"
+        android:text="@string/widget_empty"
         android:textColor="#ffffff"
         android:textSize="20sp"
         android:visibility="gone" />

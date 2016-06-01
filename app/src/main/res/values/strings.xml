@@ -14,5 +14,7 @@
     <string name="syncing">Syncing</string>
     <string name="no_data">No data available</string>
     <string name="please_wait">Please wait</string>
+    <string name="widget_empty">No data!</string>
+    <string name="widget_title">Stock Market</string>
 
 </resources>
