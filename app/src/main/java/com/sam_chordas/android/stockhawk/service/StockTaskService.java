@@ -107,10 +107,9 @@ public class StockTaskService extends GcmTaskService {
                 Log.e(LOG_TAG, "Error applying batch insert", e);
             } catch (SQLiteException e) {
                 Log.e(LOG_TAG, e.getMessage());
+                //TODO: Arabic string
                 showToast("Non-existent stock", Toast.LENGTH_SHORT);
             }
-            //TODO: Arabic string
-            showToast("Stocks synced", Toast.LENGTH_SHORT);
         }
         return result;
     }
@@ -120,8 +119,10 @@ public class StockTaskService extends GcmTaskService {
         try {
             stocks = YahooFinance.get(symbols, history);
         } catch (SocketTimeoutException e) {
+            //TODO: Arabic string
             showToast("Socket timed out!", Toast.LENGTH_SHORT);
         } catch (FileNotFoundException e) {
+            //TODO: Arabic string
             showToast("Non-existent stock!", Toast.LENGTH_SHORT);
         } catch (IOException e) {
             e.printStackTrace();

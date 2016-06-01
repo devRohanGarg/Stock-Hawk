@@ -163,15 +163,13 @@ public class LineGraphActivity extends AppCompatActivity implements LoaderManage
             x_axis_start = historicalQuotes.get(0).getHigh().floatValue();
             y_axis_start = historicalQuotes.get(0).getHigh().floatValue();
 
-            int k = 0;
             for (int i = historicalQuotes.size() - 1; i >= 0; i--) {
                 HistoricalQuote quote = historicalQuotes.get(i);
                 float high = quote.getHigh().floatValue();
-                if (k % 2 == 0)
+                if (i % 2 == 0)
                     dataset.addPoint(dateFormat.format(quote.getDate().getTime()), high);
                 else
                     dataset.addPoint("", high);
-                k++;
                 if (high < x_axis_start)
                     x_axis_start = high;
                 if (high > y_axis_start)
